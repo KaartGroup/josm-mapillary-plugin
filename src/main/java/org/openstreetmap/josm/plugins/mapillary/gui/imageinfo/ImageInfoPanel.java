@@ -27,9 +27,9 @@ import org.openstreetmap.josm.data.osm.Tag;
 import org.openstreetmap.josm.data.preferences.AbstractProperty.ValueChangeListener;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryDataListener;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryDataListener;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.gui.boilerplate.MapillaryButton;
 import org.openstreetmap.josm.plugins.mapillary.gui.boilerplate.SelectableLabel;
 import org.openstreetmap.josm.plugins.mapillary.model.UserProfile;
@@ -229,7 +229,7 @@ public final class ImageInfoPanel extends ToggleDialog implements MapillaryDataL
       addMapillaryTagAction.setTag(null);
     }
 
-    final UserProfile user = newImage instanceof MapillaryImage ? ((MapillaryImage) newImage).getUser() : null;
+    final UserProfile user = newImage instanceof MapillaryImage ? ((MapillaryImage) newImage).getMapillaryUser() : null;
     usernameLabel.setEnabled(user != null);
     if (user != null) {
       usernameLabel.setText(user.getUsername());

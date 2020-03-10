@@ -11,8 +11,8 @@ import java.awt.geom.Path2D;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.NavigatableComponent;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillarySequence;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillarySequence;
 
 /**
  * Utility class to convert entities like {@link Bounds} and {@link MapillarySequence} into {@link Shape}s that

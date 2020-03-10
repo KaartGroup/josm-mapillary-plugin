@@ -19,7 +19,7 @@ import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.junit.Test;
 
 import org.openstreetmap.josm.data.coor.LatLon;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImportedImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImportedImage;
 import org.openstreetmap.josm.plugins.mapillary.utils.ImageImportUtil;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryUtils;
 

@@ -1,13 +1,23 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.plugins.mapillary;
+package org.openstreetmap.josm.plugins.mapillary.data.mapillary;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import javax.json.Json;
 
+import org.openstreetmap.josm.data.osm.BBox;
+import org.openstreetmap.josm.data.osm.INode;
+import org.openstreetmap.josm.data.osm.IWay;
+import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
+import org.openstreetmap.josm.data.osm.UniqueIdGenerator;
+import org.openstreetmap.josm.data.osm.User;
+import org.openstreetmap.josm.data.osm.visitor.PrimitiveVisitor;
 import org.openstreetmap.josm.plugins.mapillary.cache.Caches;
 import org.openstreetmap.josm.plugins.mapillary.model.UserProfile;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryURL;
@@ -20,8 +30,8 @@ import org.openstreetmap.josm.tools.Logging;
  * @author nokutu
  * @see MapillaryAbstractImage
  */
-public class MapillarySequence {
-
+public class MapillarySequence extends MapillaryPrimitive implements IWay<MapillaryAbstractImage> {
+  private static final UniqueIdGenerator ID_GENERATOR = new UniqueIdGenerator();
   /**
    * The images in the sequence.
    */
@@ -114,7 +124,12 @@ public class MapillarySequence {
     return this.key;
   }
 
-  public UserProfile getUser() {
+  @Override
+  public User getUser() {
+    return User.createLocalUser(user.getUsername());
+  }
+
+  public UserProfile getMapillaryUser() {
     return user;
   }
 
@@ -192,4 +207,93 @@ public class MapillarySequence {
       this.user = Caches.UserProfileCache.getInstance().get(userKey);
     }, "userProfileDownload_" + userKey).start();
  }
+
+  @Override
+  public void accept(PrimitiveVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  @Override
+  public void visitReferrers(PrimitiveVisitor visitor) {
+    this.getReferrers().forEach(i -> i.accept(visitor));
+  }
+
+  @Override
+  public BBox getBBox() {
+    BBox bbox = new BBox();
+    images.forEach(i -> bbox.add(i.getBBox()));
+    return bbox;
+  }
+
+  @Override
+  public OsmPrimitiveType getType() {
+    return OsmPrimitiveType.WAY;
+  }
+
+  @Override
+  public int getNodesCount() {
+    return images.size();
+  }
+
+  @Override
+  public MapillaryAbstractImage getNode(int index) {
+    return images.get(index);
+  }
+
+  @Override
+  public List<MapillaryAbstractImage> getNodes() {
+    return new ArrayList<>(images);
+  }
+
+  @Override
+  public List<Long> getNodeIds() {
+    return images.stream().map(INode::getId).collect(Collectors.toList());
+  }
+
+  @Override
+  public long getNodeId(int idx) {
+    return images.get(idx).getId();
+  }
+
+  @Override
+  public void setNodes(List<MapillaryAbstractImage> nodes) {
+    images.clear();
+    images.addAll(nodes);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return images.size() > 1 && firstNode().equals(lastNode());
+  }
+
+  @Override
+  public MapillaryAbstractImage firstNode() {
+    return images.get(0);
+  }
+
+  @Override
+  public MapillaryAbstractImage lastNode() {
+    // TODO Auto-generated method stub
+    return images.get(images.size() - 1);
+  }
+
+  @Override
+  public boolean isFirstLastNode(INode n) {
+    return firstNode().equals(n) || lastNode().equals(n);
+  }
+
+  @Override
+  public boolean isInnerNode(INode n) {
+    return !isFirstLastNode(n);
+  }
+
+  @Override
+  public UniqueIdGenerator getIdGenerator() {
+    return ID_GENERATOR;
+  }
+
+  @Override
+  public List<MapillaryPrimitive> getReferrers(boolean allowWithoutDataset) {
+    return Collections.emptyList();
+  }
 }

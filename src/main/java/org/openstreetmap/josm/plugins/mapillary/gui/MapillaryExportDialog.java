@@ -16,9 +16,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImportedImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryLayer;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImportedImage;
+import org.openstreetmap.josm.plugins.mapillary.gui.layer.MapillaryLayer;
 
 /**
  * GUI for exporting images.

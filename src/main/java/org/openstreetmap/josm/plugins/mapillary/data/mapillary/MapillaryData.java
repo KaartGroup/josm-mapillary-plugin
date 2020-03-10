@@ -1,5 +1,5 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.plugins.mapillary;
+package org.openstreetmap.josm.plugins.mapillary.data.mapillary;
 
 import java.io.IOException;
 import java.net.URL;
@@ -12,8 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.json.Json;
@@ -24,15 +29,26 @@ import javax.swing.SwingUtilities;
 import org.apache.commons.jcs.access.CacheAccess;
 
 import org.openstreetmap.josm.data.Bounds;
-import org.openstreetmap.josm.data.Data;
 import org.openstreetmap.josm.data.DataSource;
 import org.openstreetmap.josm.data.cache.BufferedImageCacheEntry;
+import org.openstreetmap.josm.data.osm.BBox;
+import org.openstreetmap.josm.data.osm.DataSelectionListener;
+import org.openstreetmap.josm.data.osm.DownloadPolicy;
+import org.openstreetmap.josm.data.osm.HighlightUpdateListener;
+import org.openstreetmap.josm.data.osm.OsmData;
+import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.PrimitiveId;
+import org.openstreetmap.josm.data.osm.Storage;
+import org.openstreetmap.josm.data.osm.UploadPolicy;
+import org.openstreetmap.josm.data.osm.WaySegment;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapView;
+import org.openstreetmap.josm.plugins.mapillary.MapillaryPlugin;
 import org.openstreetmap.josm.plugins.mapillary.cache.CacheUtils;
 import org.openstreetmap.josm.plugins.mapillary.cache.Caches;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryMainDialog;
 import org.openstreetmap.josm.plugins.mapillary.gui.imageinfo.ImageInfoPanel;
+import org.openstreetmap.josm.plugins.mapillary.gui.layer.MapillaryLayer;
 import org.openstreetmap.josm.plugins.mapillary.gui.layer.PointObjectLayer;
 import org.openstreetmap.josm.plugins.mapillary.model.ImageDetection;
 import org.openstreetmap.josm.plugins.mapillary.oauth.MapillaryUser;
@@ -43,16 +59,21 @@ import org.openstreetmap.josm.plugins.mapillary.utils.api.JsonDecoder;
 import org.openstreetmap.josm.plugins.mapillary.utils.api.JsonImageDetectionDecoder;
 import org.openstreetmap.josm.tools.HttpClient;
 import org.openstreetmap.josm.tools.Logging;
+import org.openstreetmap.josm.tools.SubclassFilteredCollection;
+import org.openstreetmap.josm.tools.Utils;
 
 /**
  * Database class for all the {@link MapillaryAbstractImage} objects.
  *
- * @author nokutu
+ * @author nokutu, major modifications by Taylor Smock
  * @see MapillaryAbstractImage
  * @see MapillarySequence
  */
-public class MapillaryData implements Data {
+public class MapillaryData
+    implements OsmData<MapillaryPrimitive, MapillaryAbstractImage, MapillarySequence, MapillaryRelation> {
+  private final QuadBucketMapillaryPrimitiveStore store = new QuadBucketMapillaryPrimitiveStore();
   private final Set<MapillaryAbstractImage> images = ConcurrentHashMap.newKeySet();
+  private final Storage<MapillaryPrimitive> allPrimitives = new Storage<>(new Storage.PrimitiveIdHash(), true);
   /**
    * The image currently selected, this is the one being shown.
    */
@@ -64,7 +85,7 @@ public class MapillaryData implements Data {
   /**
    * All the images selected, can be more than one.
    */
-  private final Set<MapillaryAbstractImage> multiSelectedImages = ConcurrentHashMap.newKeySet();
+  private final Collection<MapillaryPrimitive> selectedPrimitives = ConcurrentHashMap.newKeySet();
   /**
    * Listeners of the class.
    */
@@ -79,10 +100,22 @@ public class MapillaryData implements Data {
    */
   private final Set<MapillaryAbstractImage> fullyDownloadedDetections = ConcurrentHashMap.newKeySet();
 
+  /** The dataset name */
+  private String name;
+
+  /** The dataset lock */
+  ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+
+  /** The download policy */
+  DownloadPolicy downloadPolicy = DownloadPolicy.NORMAL;
+  /** The upload policy */
+  UploadPolicy uploadPolicy = UploadPolicy.NORMAL;
+  private short mappaintCacheIdx = 1;
+
   /**
    * Creates a new object and adds the initial set of listeners.
    */
-  protected MapillaryData() {
+  public MapillaryData() {
     this.selectedImage = null;
     this.dataSources = new ArrayList<>();
 
@@ -112,6 +145,7 @@ public class MapillaryData implements Data {
    * @throws NullPointerException if parameter <code>image</code> is <code>null</code>
    */
   public void add(MapillaryAbstractImage image, boolean update) {
+    store.addPrimitive(image);
     images.add(image);
     if (update) {
       MapillaryLayer.invalidateInstance();
@@ -135,6 +169,7 @@ public class MapillaryData implements Data {
    * @param update Whether the map must be updated or not.
    */
   public void addAll(Collection<? extends MapillaryAbstractImage> newImages, boolean update) {
+    newImages.forEach(store::addPrimitive);
     images.addAll(newImages);
     if (update) {
       MapillaryLayer.invalidateInstance();
@@ -158,11 +193,11 @@ public class MapillaryData implements Data {
    * @param image The {@link MapillaryImage} object to be added.
    */
   public void addMultiSelectedImage(final MapillaryAbstractImage image) {
-    if (!this.multiSelectedImages.contains(image)) {
+    if (!this.selectedPrimitives.contains(image)) {
       if (this.getSelectedImage() == null) {
         this.setSelectedImage(image);
       } else {
-        this.multiSelectedImages.add(image);
+        this.selectedPrimitives.add(image);
       }
     }
     MapillaryLayer.invalidateInstance();
@@ -175,11 +210,11 @@ public class MapillaryData implements Data {
    * @param images A {@link Collection} object containing the set of images to be added.
    */
   public void addMultiSelectedImage(Collection<MapillaryAbstractImage> images) {
-    images.stream().filter(image -> !this.multiSelectedImages.contains(image)).forEach(image -> {
+    images.stream().filter(image -> !this.selectedPrimitives.contains(image)).forEach(image -> {
       if (this.getSelectedImage() == null) {
         this.setSelectedImage(image);
       } else {
-        this.multiSelectedImages.add(image);
+        this.selectedPrimitives.add(image);
       }
     });
     MapillaryLayer.invalidateInstance();
@@ -196,6 +231,7 @@ public class MapillaryData implements Data {
    * @param image The {@link MapillaryAbstractImage} that is going to be deleted.
    */
   public void remove(MapillaryAbstractImage image) {
+    store.removePrimitive(image);
     images.remove(image);
     if (getMultiSelectedImages().contains(image)) {
       setSelectedImage(null);
@@ -306,10 +342,10 @@ public class MapillaryData implements Data {
       getAllDetections(Collections.singleton((MapillaryImage) image));
     }
     this.selectedImage = image;
-    this.multiSelectedImages.clear();
+    this.selectedPrimitives.clear();
     final MapView mv = MapillaryPlugin.getMapView();
     if (image != null) {
-      this.multiSelectedImages.add(image);
+      this.selectedPrimitives.add(image);
       if (mv != null && image instanceof MapillaryImage) {
         MapillaryImage mapillaryImage = (MapillaryImage) image;
 
@@ -380,7 +416,7 @@ public class MapillaryData implements Data {
    * @return A List object containing all the images selected.
    */
   public Set<MapillaryAbstractImage> getMultiSelectedImages() {
-    return this.multiSelectedImages;
+    return new TreeSet<>(Utils.filteredCollection(selectedPrimitives, MapillaryAbstractImage.class));
   }
 
   /**
@@ -393,6 +429,8 @@ public class MapillaryData implements Data {
     synchronized (this) {
       images.clear();
       images.addAll(newImages);
+      store.clear();
+      newImages.forEach(store::addPrimitive);
     }
   }
 
@@ -469,5 +507,272 @@ public class MapillaryData implements Data {
   private static JsonReader createJsonReader(HttpClient client) throws IOException {
     client.connect();
     return Json.createReader(client.getResponse().getContent());
+  }
+
+  @Override
+  public void lock() {
+    readWriteLock.readLock().lock();
+  }
+
+  @Override
+  public void unlock() {
+    readWriteLock.readLock().unlock();
+  }
+
+  @Override
+  public boolean isLocked() {
+    boolean locked = false;
+    try {
+      locked = readWriteLock.readLock().tryLock();
+      return locked;
+    } finally {
+      if (locked) {
+        readWriteLock.readLock().unlock();
+      }
+    }
+  }
+
+  @Override
+  public String getVersion() {
+    return null;
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  @Override
+  public void addPrimitive(MapillaryPrimitive primitive) {
+    if (primitive instanceof MapillaryAbstractImage) {
+      images.add((MapillaryAbstractImage) primitive);
+      store.addPrimitive(primitive);
+      fireImagesAdded();
+    }
+  }
+
+  @Override
+  public void clear() {
+    store.clear();
+    images.clear();
+  }
+
+  @Override
+  public List<MapillaryAbstractImage> searchNodes(BBox bbox) {
+    return store.searchNodes(bbox);
+  }
+
+  @Override
+  public boolean containsNode(MapillaryAbstractImage n) {
+    return store.containsNode(n);
+  }
+
+  @Override
+  public List<MapillarySequence> searchWays(BBox bbox) {
+    return store.searchWays(bbox);
+  }
+
+  @Override
+  public boolean containsWay(MapillarySequence w) {
+    return store.containsWay(w);
+  }
+
+  @Override
+  public List<MapillaryRelation> searchRelations(BBox bbox) {
+    return store.searchRelations(bbox);
+  }
+
+  @Override
+  public boolean containsRelation(MapillaryRelation r) {
+    return store.containsRelation(r);
+  }
+
+  @Override
+  public MapillaryPrimitive getPrimitiveById(PrimitiveId primitiveId) {
+    return null; // TODO implement?
+  }
+
+  @Override
+  public <T extends MapillaryPrimitive> Collection<T> getPrimitives(Predicate<? super MapillaryPrimitive> predicate) {
+    return new SubclassFilteredCollection<>(allPrimitives, predicate);
+  }
+
+  @Override
+  public Collection<MapillaryAbstractImage> getNodes() {
+    return getPrimitives(MapillaryAbstractImage.class::isInstance);
+  }
+
+  @Override
+  public Collection<MapillarySequence> getWays() {
+    return getPrimitives(MapillarySequence.class::isInstance);
+  }
+
+  @Override
+  public Collection<MapillaryRelation> getRelations() {
+    return getPrimitives(MapillaryRelation.class::isInstance);
+  }
+
+  @Override
+  public DownloadPolicy getDownloadPolicy() {
+    return downloadPolicy;
+  }
+
+  @Override
+  public void setDownloadPolicy(DownloadPolicy downloadPolicy) {
+    this.downloadPolicy = downloadPolicy;
+  }
+
+  @Override
+  public UploadPolicy getUploadPolicy() {
+    return uploadPolicy;
+  }
+
+  @Override
+  public void setUploadPolicy(UploadPolicy uploadPolicy) {
+    this.uploadPolicy = uploadPolicy;
+  }
+
+  @Override
+  public Lock getReadLock() {
+    return readWriteLock.readLock();
+  }
+
+  @Override
+  public Collection<WaySegment> getHighlightedVirtualNodes() {
+    // TODO Auto-generated method stub
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Collection<WaySegment> getHighlightedWaySegments() {
+    // TODO Auto-generated method stub
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void setHighlightedVirtualNodes(Collection<WaySegment> waySegments) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void setHighlightedWaySegments(Collection<WaySegment> waySegments) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void addHighlightUpdateListener(HighlightUpdateListener listener) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void removeHighlightUpdateListener(HighlightUpdateListener listener) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public Collection<MapillaryPrimitive> getAllSelected() {
+    return Collections.unmodifiableCollection(selectedPrimitives);
+  }
+
+  @Override
+  public boolean selectionEmpty() {
+    return selectedPrimitives.isEmpty();
+  }
+
+  @Override
+  public boolean isSelected(MapillaryPrimitive osm) {
+    return selectedPrimitives.contains(osm);
+  }
+
+  @Override
+  public void toggleSelected(Collection<? extends PrimitiveId> osm) {
+    List<MapillaryPrimitive> realPrimitives = osm.stream().map(this::getPrimitiveById).filter(Objects::nonNull)
+        .collect(Collectors.toList());
+    realPrimitives.stream().filter(p -> !selectedPrimitives.remove(p)).forEach(this::addSelected);
+  }
+
+  @Override
+  public void toggleSelected(PrimitiveId... osm) {
+    toggleSelected(Arrays.asList(osm));
+  }
+
+  @Override
+  public void setSelected(Collection<? extends PrimitiveId> selection) {
+    selectedPrimitives.clear();
+    selection.stream().map(this::getPrimitiveById).forEach(selectedPrimitives::add);
+    if (!selectedPrimitives.isEmpty()) {
+      MapillaryPrimitive p = selectedPrimitives.iterator().next();
+      if (p instanceof MapillaryAbstractImage) {
+        this.setSelectedImage((MapillaryAbstractImage) p, true);
+      }
+    }
+  }
+
+  @Override
+  public void setSelected(PrimitiveId... osm) {
+    setSelected(Arrays.asList(osm));
+  }
+
+  @Override
+  public void addSelected(Collection<? extends PrimitiveId> selection) {
+    selection.stream().map(this::getPrimitiveById).forEach(selectedPrimitives::add);
+  }
+
+  @Override
+  public void addSelected(PrimitiveId... osm) {
+    addSelected(Arrays.asList(osm));
+  }
+
+  @Override
+  public void clearSelection(PrimitiveId... osm) {
+    clearSelection(Arrays.asList(osm));
+  }
+
+  @Override
+  public void clearSelection(Collection<? extends PrimitiveId> list) {
+    list.stream().map(this::getPrimitiveById).forEach(selectedPrimitives::remove);
+  }
+
+  @Override
+  public void clearSelection() {
+    selectedPrimitives.clear();
+  }
+
+  @Override
+  public void addSelectionListener(DataSelectionListener listener) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void removeSelectionListener(DataSelectionListener listener) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void clearMappaintCache() {
+    mappaintCacheIdx++;
+  }
+
+  /**
+   * Returns mappaint cache index for this DataSet.
+   *
+   * If the {@link OsmPrimitive#mappaintCacheIdx} is not equal to the DataSet mappaint cache index, this means the cache
+   * for that primitive is out of date.
+   *
+   * @return mappaint cache index
+   */
+  public short getMappaintCacheIndex() {
+    return mappaintCacheIdx;
   }
 }

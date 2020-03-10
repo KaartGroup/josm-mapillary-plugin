@@ -18,6 +18,7 @@ import org.openstreetmap.josm.plugins.mapillary.actions.MapillaryJoinAction;
 import org.openstreetmap.josm.plugins.mapillary.actions.MapillaryUploadAction;
 import org.openstreetmap.josm.plugins.mapillary.actions.MapillaryWalkAction;
 import org.openstreetmap.josm.plugins.mapillary.actions.MapillaryZoomAction;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryDataListener;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryChangesetDialog;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryFilterDialog;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryHistoryDialog;
@@ -72,7 +73,7 @@ public class MapillaryPlugin extends Plugin {
     }
   }
 
-  static MapillaryDataListener[] getMapillaryDataListeners() {
+  public static MapillaryDataListener[] getMapillaryDataListeners() {
     return new MapillaryDataListener[]{UPLOAD_ACTION, WALK_ACTION, ZOOM_ACTION};
   }
 

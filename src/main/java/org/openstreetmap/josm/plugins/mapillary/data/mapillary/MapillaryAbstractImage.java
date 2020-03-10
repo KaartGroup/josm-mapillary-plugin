@@ -1,13 +1,22 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.plugins.mapillary;
+package org.openstreetmap.josm.plugins.mapillary.data.mapillary;
 
 import java.awt.Color;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
+import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.data.osm.BBox;
+import org.openstreetmap.josm.data.osm.INode;
+import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
+import org.openstreetmap.josm.data.osm.UniqueIdGenerator;
+import org.openstreetmap.josm.data.osm.visitor.PrimitiveVisitor;
+import org.openstreetmap.josm.data.projection.ProjectionRegistry;
 import org.openstreetmap.josm.plugins.mapillary.utils.LocalDateConverter;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryProperties;
 
@@ -18,7 +27,7 @@ import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryProperties;
  * @author nokutu
  *
  */
-public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbstractImage> {
+public abstract class MapillaryAbstractImage extends MapillaryPrimitive implements INode {
   /**
    * If two values for field ca differ by less than EPSILON both values are considered equal.
    */
@@ -36,6 +45,8 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
   private LatLon tempLatLon;
 
   private final boolean pano;
+
+  public static final UniqueIdGenerator UNIQUE_ID_GENERATOR = new UniqueIdGenerator();
 
   /**
    * When the object is being dragged in the map, the temporal position is
@@ -60,6 +71,8 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
    * @param pano   The property to indicate whether image is panorama or not.
    */
   protected MapillaryAbstractImage(final LatLon latLon, final double ca, final boolean pano) {
+    this.id = UNIQUE_ID_GENERATOR.currentUniqueId();
+    UNIQUE_ID_GENERATOR.advanceUniqueId(this.id);
     this.latLon = latLon;
     this.tempLatLon = this.latLon;
     this.movingLatLon = this.latLon;
@@ -68,6 +81,11 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
     this.movingCa = ca;
     this.pano = pano;
     this.visible = true;
+  }
+
+  @Override
+  public OsmPrimitiveType getType() {
+    return OsmPrimitiveType.NODE;
   }
 
   /**
@@ -135,13 +153,31 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
     return formatter.format(date);
   }
 
-  /**
-  * Returns a LatLon object containing the original coordinates of the object.
-  *
-  * @return The LatLon object with the position of the object.
-  */
-  public LatLon getLatLon() {
+  @Override
+  public LatLon getCoor() {
     return latLon;
+  }
+
+  @Override
+  public void setCoor(LatLon coor) {
+    if (coor != null) {
+      this.latLon = coor;
+    }
+  }
+
+  @Override
+  public void setEastNorth(EastNorth eastNorth) {
+    latLon = ProjectionRegistry.getProjection().eastNorth2latlon(eastNorth);
+  }
+
+  @Override
+  public double lon() {
+    return latLon.lon();
+  }
+
+  @Override
+  public double lat() {
+    return latLon.lat();
   }
 
   /**
@@ -197,11 +233,17 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
     return this.tempLatLon;
   }
 
+  @Override
+  public boolean isReferredByWays(int n) {
+    return n == 1 && getSequence() != null;
+  }
+
   /**
    * Returns whether the object has been modified or not.
    *
    * @return true if the object has been modified; false otherwise.
    */
+  @Override
   public boolean isModified() {
     return !this.getMovingLatLon().equals(this.latLon) || Math.abs(this.getMovingCa() - this.ca) > EPSILON;
   }
@@ -211,6 +253,7 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
    *
    * @return True if the image is visible; false otherwise.
    */
+  @Override
   public boolean isVisible() {
     return this.visible;
   }
@@ -262,12 +305,6 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
     this.capturedAt = capturedAt;
   }
 
-  public void setLatLon(final LatLon latLon) {
-    if (latLon != null) {
-      this.latLon = latLon;
-    }
-  }
-
   /**
    * Sets the MapillarySequence object which contains the MapillaryImage.
    *
@@ -289,6 +326,7 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
    *
    * @param visible true if the image is set to be visible; false otherwise.
    */
+  @Override
   public void setVisible(final boolean visible) {
     this.visible = visible;
   }
@@ -309,6 +347,36 @@ public abstract class MapillaryAbstractImage implements Comparable<MapillaryAbst
    */
   public void turn(final double ca) {
     this.movingCa = this.tempCa + ca;
+  }
+
+  @Override
+  public void accept(PrimitiveVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  @Override
+  public BBox getBBox() {
+    return new BBox(latLon);
+  }
+
+  @Override
+  public void visitReferrers(PrimitiveVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  @Override
+  public UniqueIdGenerator getIdGenerator() {
+    return UNIQUE_ID_GENERATOR;
+  }
+
+  @Override
+  public List<MapillaryPrimitive> getReferrers() {
+    return Collections.singletonList(getSequence());
+  }
+
+  @Override
+  public List<MapillaryPrimitive> getReferrers(boolean ignoreDataSet) {
+    return getReferrers();
   }
 
   public abstract Color paintHighlightedColour();

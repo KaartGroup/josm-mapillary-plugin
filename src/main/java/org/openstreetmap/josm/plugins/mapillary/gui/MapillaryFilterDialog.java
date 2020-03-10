@@ -30,16 +30,17 @@ import javafx.event.EventType;
 import javafx.scene.control.DatePicker;
 
 import org.openstreetmap.josm.actions.ExpertToggleAction;
+import org.openstreetmap.josm.data.osm.User;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.SideButton;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
 import org.openstreetmap.josm.gui.widgets.DisableShortcutsOnFocusGainedTextField;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryDataListener;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImportedImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryLayer;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryDataListener;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImportedImage;
 import org.openstreetmap.josm.plugins.mapillary.gui.dialog.JavaFxWrapper;
+import org.openstreetmap.josm.plugins.mapillary.gui.layer.MapillaryLayer;
 import org.openstreetmap.josm.plugins.mapillary.model.ImageDetection;
 import org.openstreetmap.josm.plugins.mapillary.model.UserProfile;
 import org.openstreetmap.josm.plugins.mapillary.utils.LocalDateConverter;
@@ -236,8 +237,8 @@ public final class MapillaryFilterDialog extends ToggleDialog implements Mapilla
           if (onlySignsIsSelected && (((MapillaryImage) img).getDetections().isEmpty() || !checkSigns((MapillaryImage) img))) {
             return true;
           }
-          UserProfile userProfile = ((MapillaryImage) img).getUser();
-          if (!"".equals(user.getText()) && (userProfile == null || !user.getText().equals(userProfile.getUsername()))) {
+          User userProfile = ((MapillaryImage) img).getUser();
+          if (!"".equals(user.getText()) && (userProfile == null || !user.getText().equals(userProfile.getName()))) {
             return true;
           }
         }

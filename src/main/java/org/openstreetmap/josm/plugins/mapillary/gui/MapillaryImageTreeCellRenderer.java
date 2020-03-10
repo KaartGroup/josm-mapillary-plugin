@@ -7,7 +7,7 @@ import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
 import org.openstreetmap.josm.tools.ImageProvider;
 
 /**

@@ -1,5 +1,5 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.plugins.mapillary;
+package org.openstreetmap.josm.plugins.mapillary.gui.layer;
 
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
@@ -57,7 +57,15 @@ import org.openstreetmap.josm.gui.layer.LayerManager.LayerRemoveEvent;
 import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeEvent;
 import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeListener;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
+import org.openstreetmap.josm.plugins.mapillary.MapillaryLocationChangeset;
+import org.openstreetmap.josm.plugins.mapillary.MapillaryPlugin;
 import org.openstreetmap.josm.plugins.mapillary.cache.CacheUtils;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryData;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryDataListener;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImportedImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillarySequence;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryChangesetDialog;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryFilterDialog;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryMainDialog;
@@ -378,7 +386,7 @@ public final class MapillaryLayer extends AbstractModifiableLayer implements
    * @param img the image to be drawn onto the Graphics context
    */
   private void drawImageMarker(final Graphics2D g, final MapillaryAbstractImage img) {
-    if (img == null || img.getLatLon() == null) {
+    if (img == null || img.getCoor() == null) {
       Logging.warn("An image is not painted, because it is null or has no LatLon!");
       return;
     }
@@ -452,11 +460,11 @@ public final class MapillaryLayer extends AbstractModifiableLayer implements
       synchronized (imageViewedList) {
         for (MapillaryAbstractImage image : imageViewedList) {
           BBox bbox = new BBox();
-          bbox.addLatLon(image.getLatLon(), 0.005); // 96m-556m, depending upon N/S location (low at 80 degrees, high at
+          bbox.addLatLon(image.getCoor(), 0.005); // 96m-556m, depending upon N/S location (low at 80 degrees, high at
                                                     // 0)
           List<OsmPrimitive> searchPrimitives = ds.searchPrimitives(bbox);
           if (primitives.parallelStream().filter(searchPrimitives::contains)
-              .mapToDouble(prim -> Geometry.getDistance(prim, new Node(image.getLatLon())))
+              .mapToDouble(prim -> Geometry.getDistance(prim, new Node(image.getCoor())))
               .anyMatch(d -> d < maxDistance)) {
             isApplicable = true;
             break;

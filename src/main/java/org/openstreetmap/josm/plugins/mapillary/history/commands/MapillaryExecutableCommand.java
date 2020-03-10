@@ -3,7 +3,7 @@ package org.openstreetmap.josm.plugins.mapillary.history.commands;
 
 import java.util.Set;
 
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
 
 /**
  * Superclass for those commands that must be executed after creation.

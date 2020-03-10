@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryChangesetListener;
 
 public class MapillaryLocationChangeset extends AbstractSet<MapillaryImage> {

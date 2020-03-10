@@ -18,11 +18,11 @@ import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryData;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryLayer;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryData;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.gui.MapillaryMainDialog;
+import org.openstreetmap.josm.plugins.mapillary.gui.layer.MapillaryLayer;
 import org.openstreetmap.josm.plugins.mapillary.history.MapillaryRecord;
 import org.openstreetmap.josm.plugins.mapillary.history.commands.CommandMove;
 import org.openstreetmap.josm.plugins.mapillary.history.commands.CommandTurn;
@@ -93,7 +93,7 @@ public class SelectMode extends AbstractMode {
     if (
             MainApplication.getLayerManager().getActiveLayer() == MapillaryLayer.getInstance()
                 && SwingUtilities.isLeftMouseButton(e)
-                && highlightImg != null && highlightImg.getLatLon() != null
+                && highlightImg != null && highlightImg.getCoor() != null
             ) {
       Point highlightImgPoint = MainApplication.getMap().mapView.getPoint(highlightImg.getTempLatLon());
       if (e.isShiftDown()) { // turn

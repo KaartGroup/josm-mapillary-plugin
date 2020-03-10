@@ -22,8 +22,8 @@ import javax.json.JsonValue;
 import org.junit.Test;
 
 import org.openstreetmap.josm.data.coor.LatLon;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillarySequence;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillarySequence;
 import org.openstreetmap.josm.plugins.mapillary.utils.JsonUtil;
 import org.openstreetmap.josm.plugins.mapillary.utils.TestUtil;
 
@@ -50,10 +50,10 @@ public class JsonSequencesDecoderTest {
     assertEquals(333.62239999999997, seq.getImages().get(2).getCa(), 1e-10);
     assertEquals(329.94820000000004, seq.getImages().get(3).getCa(), 1e-10);
 
-    assertEquals(new LatLon(7.246497, 16.432958),  seq.getImages().get(0).getLatLon());
-    assertEquals(new LatLon(7.246567, 16.432955),  seq.getImages().get(1).getLatLon());
-    assertEquals(new LatLon(7.248372, 16.432971),  seq.getImages().get(2).getLatLon());
-    assertEquals(new LatLon(7.249027, 16.432976),  seq.getImages().get(3).getLatLon());
+    assertEquals(new LatLon(7.246497, 16.432958),  seq.getImages().get(0).getCoor());
+    assertEquals(new LatLon(7.246567, 16.432955),  seq.getImages().get(1).getCoor());
+    assertEquals(new LatLon(7.248372, 16.432971),  seq.getImages().get(2).getCoor());
+    assertEquals(new LatLon(7.249027, 16.432976),  seq.getImages().get(3).getCoor());
 
     assertEquals(1_457_963_093_860L, seq.getCapturedAt()); // 2016-03-14T13:44:53.860 UTC
   }

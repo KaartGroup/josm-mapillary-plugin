@@ -4,8 +4,8 @@ package org.openstreetmap.josm.plugins.mapillary.utils.api;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
-import org.openstreetmap.josm.plugins.mapillary.MapillaryData;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryData;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryURL.APIv3;
 
 /**

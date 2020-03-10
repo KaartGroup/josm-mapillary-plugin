@@ -9,8 +9,8 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 
 import org.openstreetmap.josm.data.coor.LatLon;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.MapillaryLocationChangeset;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
 
 /**
  * Encodes in JSON a location changeset.
@@ -39,7 +39,7 @@ public final class JsonLocationChangesetEncoder {
   protected static JsonObjectBuilder encodeImageChanges(MapillaryImage img) {
     Objects.requireNonNull(img);
 
-    final JsonObjectBuilder from = getChangeJsonBuilder(img.getLatLon(), img.getCa());
+    final JsonObjectBuilder from = getChangeJsonBuilder(img.getCoor(), img.getCa());
     final JsonObjectBuilder to = getChangeJsonBuilder(img.getTempLatLon(), img.getTempCa());
 
     return Json.createObjectBuilder()

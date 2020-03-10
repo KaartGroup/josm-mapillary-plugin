@@ -1,5 +1,5 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.plugins.mapillary;
+package org.openstreetmap.josm.plugins.mapillary.data.mapillary;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -13,9 +13,11 @@ import javax.imageio.ImageIO;
 
 import org.openstreetmap.josm.data.coor.CachedLatLon;
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.data.osm.IPrimitive;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.layer.geoimage.GeoImageLayer;
 import org.openstreetmap.josm.gui.layer.geoimage.ImageEntry;
+import org.openstreetmap.josm.plugins.mapillary.MapillaryPlugin;
 import org.openstreetmap.josm.plugins.mapillary.utils.ImageMetaDataUtil;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryColorScheme;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryUtils;
@@ -131,7 +133,7 @@ public class MapillaryImportedImage extends MapillaryAbstractImage {
   }
 
   @Override
-  public int compareTo(MapillaryAbstractImage image) {
+  public int compareTo(IPrimitive image) {
     if (image instanceof MapillaryImportedImage)
       return this.file.compareTo(((MapillaryImportedImage) image).getFile());
     return hashCode() - image.hashCode();

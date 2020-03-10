@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
 import org.openstreetmap.josm.plugins.mapillary.history.commands.MapillaryCommand;
 import org.openstreetmap.josm.plugins.mapillary.history.commands.MapillaryExecutableCommand;
 

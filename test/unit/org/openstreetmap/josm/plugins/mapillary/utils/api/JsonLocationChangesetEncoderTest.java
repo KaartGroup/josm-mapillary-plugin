@@ -6,8 +6,8 @@ import static org.openstreetmap.josm.plugins.mapillary.utils.JsonUtil.assertJson
 import org.junit.Test;
 
 import org.openstreetmap.josm.data.coor.LatLon;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.MapillaryLocationChangeset;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
 import org.openstreetmap.josm.plugins.mapillary.utils.TestUtil;
 
 public class JsonLocationChangesetEncoderTest {

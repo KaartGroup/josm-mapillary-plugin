@@ -4,7 +4,7 @@ package org.openstreetmap.josm.plugins.mapillary.history.commands;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
 
 /**
  * Abstract class for any Mapillary command.

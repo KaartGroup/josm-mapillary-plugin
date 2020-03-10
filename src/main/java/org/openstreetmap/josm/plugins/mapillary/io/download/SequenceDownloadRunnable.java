@@ -12,9 +12,9 @@ import javax.json.JsonException;
 import javax.json.JsonReader;
 
 import org.openstreetmap.josm.data.Bounds;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryData;
-import org.openstreetmap.josm.plugins.mapillary.MapillarySequence;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryData;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillarySequence;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryProperties;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryURL.APIv3;
 import org.openstreetmap.josm.plugins.mapillary.utils.api.JsonDecoder;
@@ -65,7 +65,7 @@ public final class SequenceDownloadRunnable extends BoundsDownloadRunnable {
       for (MapillarySequence seq : sequences) {
         if (Boolean.TRUE.equals(MapillaryProperties.CUT_OFF_SEQUENCES_AT_BOUNDS.get())) {
           for (MapillaryAbstractImage img : seq.getImages()) {
-            if (bounds.contains(img.getLatLon())) {
+            if (bounds.contains(img.getCoor())) {
               data.add(img);
             } else {
               seq.remove(img);
@@ -74,7 +74,7 @@ public final class SequenceDownloadRunnable extends BoundsDownloadRunnable {
         } else {
           boolean sequenceCrossesThroughBounds = false;
           for (int i = 0; i < seq.getImages().size() && !sequenceCrossesThroughBounds; i++) {
-            sequenceCrossesThroughBounds = bounds.contains(seq.getImages().get(i).getLatLon());
+            sequenceCrossesThroughBounds = bounds.contains(seq.getImages().get(i).getCoor());
           }
           if (sequenceCrossesThroughBounds) {
             data.addAll(seq.getImages(), true);

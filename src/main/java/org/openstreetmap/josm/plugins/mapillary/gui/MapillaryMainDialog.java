@@ -30,22 +30,21 @@ import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.data.cache.CacheEntry;
 import org.openstreetmap.josm.data.cache.CacheEntryAttributes;
 import org.openstreetmap.josm.data.cache.ICachedLoaderListener;
+import org.openstreetmap.josm.data.osm.User;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.gui.SideButton;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryAbstractImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryDataListener;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryImportedImage;
-import org.openstreetmap.josm.plugins.mapillary.MapillaryLayer;
 import org.openstreetmap.josm.plugins.mapillary.MapillaryPlugin;
 import org.openstreetmap.josm.plugins.mapillary.actions.SelectNextImageAction;
 import org.openstreetmap.josm.plugins.mapillary.actions.WalkListener;
 import org.openstreetmap.josm.plugins.mapillary.actions.WalkThread;
 import org.openstreetmap.josm.plugins.mapillary.cache.MapillaryCache;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryAbstractImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryDataListener;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImage;
+import org.openstreetmap.josm.plugins.mapillary.data.mapillary.MapillaryImportedImage;
 import org.openstreetmap.josm.plugins.mapillary.gui.imageinfo.ImageInfoHelpPopup;
-import org.openstreetmap.josm.plugins.mapillary.gui.panorama.Vector3D;
-import org.openstreetmap.josm.plugins.mapillary.model.UserProfile;
+import org.openstreetmap.josm.plugins.mapillary.gui.layer.MapillaryLayer;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryProperties;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Logging;
@@ -426,9 +425,9 @@ public final class MapillaryMainDialog extends ToggleDialog implements
       StringBuilder title = new StringBuilder(tr(BASE_TITLE));
       if (this.image instanceof MapillaryImage) {
         MapillaryImage mapillaryImage = (MapillaryImage) this.image;
-        UserProfile user = mapillaryImage.getUser();
+        User user = mapillaryImage.getUser();
         if (user != null) {
-          title.append(MESSAGE_SEPARATOR).append(user.getUsername());
+          title.append(MESSAGE_SEPARATOR).append(user.getName());
         }
         if (mapillaryImage.getCapturedAt() != 0) {
           title.append(MESSAGE_SEPARATOR).append(mapillaryImage.getDate());

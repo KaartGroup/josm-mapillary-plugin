@@ -1,5 +1,5 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.plugins.mapillary;
+package org.openstreetmap.josm.plugins.mapillary.data.mapillary;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.List;
 
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.data.osm.IPrimitive;
+import org.openstreetmap.josm.data.osm.User;
+import org.openstreetmap.josm.plugins.mapillary.gui.layer.MapillaryLayer;
 import org.openstreetmap.josm.plugins.mapillary.model.ImageDetection;
 import org.openstreetmap.josm.plugins.mapillary.model.UserProfile;
 import org.openstreetmap.josm.plugins.mapillary.utils.MapillaryColorScheme;
@@ -63,8 +66,22 @@ public class MapillaryImage extends MapillaryAbstractImage {
     return detections;
   }
 
-  public UserProfile getUser() {
-    return getSequence().getUser();
+  @Override
+  public User getUser() {
+    UserProfile user = getMapillaryUser();
+    if (user == null) {
+      return User.getAnonymous();
+    }
+    return User.createLocalUser(getMapillaryUser().getUsername());
+  }
+
+  /**
+   * Get the Mapillary UserProfile for this image
+   *
+   * @return The user profile for the image and sequence
+   */
+  public UserProfile getMapillaryUser() {
+    return getSequence().getMapillaryUser();
   }
 
   public void setAllDetections(Collection<ImageDetection> newDetections) {
@@ -79,7 +96,7 @@ public class MapillaryImage extends MapillaryAbstractImage {
   public String toString() {
     return String.format(
       "Image[key=%s,lat=%f,lon=%f,ca=%f,user=%s,capturedAt=%d]",
-      key, latLon.lat(), latLon.lon(), ca, getUser() == null ? "null" : getUser().getUsername(), capturedAt
+      key, latLon.lat(), latLon.lon(), ca, getUser() == null ? "null" : getUser().getName(), capturedAt
     );
   }
 
@@ -89,11 +106,8 @@ public class MapillaryImage extends MapillaryAbstractImage {
   }
 
   @Override
-  public int compareTo(MapillaryAbstractImage image) {
-    if (image instanceof MapillaryImage) {
-      return this.key.compareTo(((MapillaryImage) image).getKey());
-    }
-    return hashCode() - image.hashCode();
+  public int compareTo(IPrimitive o) {
+    return o instanceof MapillaryImage ? key.compareTo(((MapillaryImage) o).getKey()) : hashCode() - o.hashCode();
   }
 
   @Override
